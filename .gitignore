@@ -1,0 +1,13 @@
+# Ignore frontend build artifacts
+frontend/remix-of-remix-of-doc-keeper-main/remix-of-remix-of-doc-keeper-main/node_modules/*
+frontend/remix-of-remix-of-doc-keeper-main/remix-of-remix-of-doc-keeper-main/build/*
+frontend/remix-of-remix-of-doc-keeper-main/remix-of-remix-of-doc-keeper-main/dist/*
+frontend/remix-of-remix-of-doc-keeper-main/remix-of-remix-of-doc-keeper-main/.env/*
+frontend/remix-of-remix-of-doc-keeper-main/remix-of-remix-of-doc-keeper-main/.vscode/*
+
+# Ignore backend build artifacts
+backend/target/*
+backend/build/*
+backend/*.log
+backend/.idea/*
+backend/*.iml

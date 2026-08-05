@@ -1,45 +1,58 @@
 package com.saigontechnologyintern.document_management.folderManagement;
 
-import java.util.List;
+import com.saigontechnologyintern.document_management.userManagement.UserManager;
+import com.saigontechnologyintern.document_management.userManagement.UserManagerRepository;
 import org.springframework.stereotype.Service;
 
-@Service
-public class FolderManagerService {
-    private final FolderManagerRepository folderManagerRepository;
+import java.util.List;
 
-    public FolderManagerService(FolderManagerRepository folderManagerRepository) {
-        this.folderManagerRepository = folderManagerRepository;
+    @Service
+    public class FolderManagerService {
+        private final FolderManagerRepository folderManagerRepository;
+        private final UserManagerRepository userManagerRepository;
+
+        public FolderManagerService(
+                FolderManagerRepository folderManagerRepository,
+                UserManagerRepository userManagerRepository) {
+            this.folderManagerRepository = folderManagerRepository;
+            this.userManagerRepository = userManagerRepository;
+        }
+
+    public List<FolderManager> getAllFolders(Integer currentUserId) {
+        return folderManagerRepository.findByOwner_UserId(currentUserId);
     }
 
-    public List<FolderManager> getAllFolders() {
-        return folderManagerRepository.findAll();
-    }
-
-    public FolderManager getFolderById(Integer id) {
-        return folderManagerRepository
-                .findById(id)
+    public FolderManager getFolderById(Integer id, Integer currentUserId) {
+        FolderManager folder = folderManagerRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Folder not found with id: " + id));
+
+        boolean isOwner = folder.getOwner() != null && folder.getOwner().getUserId().equals(currentUserId);
+        if (!isOwner) {
+            throw new IllegalArgumentException("Folder not found with id: " + id);
+        }
+        return folder;
     }
 
-    public FolderManager createFolder(FolderManager folder) {
-        return folderManagerRepository.save(folder);
-    }
+        public FolderManager createFolder(FolderManager folder, Integer currentUserId) {
+            UserManager owner = userManagerRepository.findById(currentUserId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + currentUserId));
 
-    public FolderManager updateFolder(Integer id, FolderManager updatedFolder) {
-        FolderManager existing = getFolderById(id);
+            FolderManager entity = new FolderManager();
+            entity.setName(folder.getName());
+            entity.setOwner(owner);
+            return folderManagerRepository.save(entity);
+        }
+
+    public FolderManager updateFolder(Integer id, FolderManager updatedFolder, Integer currentUserId) {
+        FolderManager existing = getFolderById(id, currentUserId);
         if (updatedFolder.getName() != null) {
             existing.setName(updatedFolder.getName());
-        }
-        if (updatedFolder.getOwner() != null) {
-            existing.setOwner(updatedFolder.getOwner());
         }
         return folderManagerRepository.save(existing);
     }
 
-    public void deleteFolderById(Integer id) {
-        if (!folderManagerRepository.existsById(id)) {
-            throw new IllegalArgumentException("Folder not found with id: " + id);
-        }
-        folderManagerRepository.deleteById(id);
+    public void deleteFolderById(Integer id, Integer currentUserId) {
+        FolderManager existing = getFolderById(id, currentUserId);
+        folderManagerRepository.delete(existing);
     }
 }

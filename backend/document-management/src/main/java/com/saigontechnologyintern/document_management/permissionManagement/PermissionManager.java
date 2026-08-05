@@ -1,5 +1,6 @@
 package com.saigontechnologyintern.document_management.permissionManagement;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.saigontechnologyintern.document_management.documentManagement.DocumentManage;
 import com.saigontechnologyintern.document_management.userManagement.UserManager;
 import jakarta.persistence.*;
@@ -17,10 +18,16 @@ public class PermissionManager {
     @Column(name = "access_type", nullable = false, length = 20)
     private String accessType;
 
+    // ⭐ MODIFICATION: Added @JsonIgnore to break circular reference
+    // Prevents: PermissionManager → document → permissions → document → infinite loop
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doc_id")
     private DocumentManage document;
 
+    // ⭐ MODIFICATION: Added @JsonIgnore to break circular reference
+    // Prevents: PermissionManager → user → permissions → user → infinite loop
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private UserManager user;

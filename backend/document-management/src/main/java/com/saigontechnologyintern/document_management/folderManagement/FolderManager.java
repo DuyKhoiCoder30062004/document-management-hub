@@ -1,5 +1,6 @@
 package com.saigontechnologyintern.document_management.folderManagement;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.saigontechnologyintern.document_management.documentManagement.DocumentManage;
 import com.saigontechnologyintern.document_management.userManagement.UserManager;
 import jakarta.persistence.*;
@@ -23,10 +24,16 @@ public class FolderManager {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // ⭐ MODIFICATION: Added @JsonIgnore to break circular reference
+    // Prevents: UserManager → folders → owner (UserManager) → infinite loop
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
     private UserManager owner;
 
+    // ⭐ MODIFICATION: Added @JsonIgnore
+    // Prevents: Nested serialization of all documents when returning folder
+    @JsonIgnore
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DocumentManage> documents = new ArrayList<>();
 

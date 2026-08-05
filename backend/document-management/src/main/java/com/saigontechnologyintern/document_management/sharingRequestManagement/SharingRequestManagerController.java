@@ -1,40 +1,121 @@
 package com.saigontechnologyintern.document_management.sharingRequestManagement;
 
 import java.util.List;
+import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.saigontechnologyintern.document_management.authManagement.JwtService;
 
 @RestController
 @RequestMapping("/api/v1/sharing-requests")
 @CrossOrigin(origins = "*")
 public class SharingRequestManagerController {
-    private final SharingRequestManagerService sharingRequestManagerService;
 
-    public SharingRequestManagerController(SharingRequestManagerService sharingRequestManagerService) {
+    private final SharingRequestManagerService sharingRequestManagerService;
+    private final JwtService jwtService;
+
+    public SharingRequestManagerController(
+            SharingRequestManagerService sharingRequestManagerService,
+            JwtService jwtService) {
         this.sharingRequestManagerService = sharingRequestManagerService;
+        this.jwtService = jwtService;
     }
 
     @GetMapping
-    public List<SharingRequestManager> getSharingRequests(
+    public List<SharingRequestResponseDto> getSharingRequests(
+            @RequestHeader("Authorization") String authHeader,
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "doc_id", required = false) Integer docId) {
-        if (status != null) {
-            return sharingRequestManagerService.getSharingRequestsByStatus(status);
+
+        String token = extractToken(authHeader);
+        Integer currentUserId = jwtService.extractUserId(token);
+        String role = jwtService.extractRole(token);
+
+        List<SharingRequestManager> data;
+        if (role != null && "ADMIN".equalsIgnoreCase(role)) {
+            if (status != null && docId != null) {
+                data = sharingRequestManagerService.getSharingRequestsByStatusAndDocumentId(status, docId);
+            } else if (status != null) {
+                data = sharingRequestManagerService.getSharingRequestsByStatus(status);
+            } else if (docId != null) {
+                data = sharingRequestManagerService.getSharingRequestsByDocumentId(docId);
+            } else {
+                data = sharingRequestManagerService.getAllSharingRequests();
+            }
+        } else {
+            data = sharingRequestManagerService.getIncomingRequests(currentUserId, status, docId);
         }
-        if (docId != null) {
-            return sharingRequestManagerService.getSharingRequestsByDocumentId(docId);
-        }
-        return sharingRequestManagerService.getAllSharingRequests();
+
+        return data.stream().map(sharingRequestManagerService::toDto).toList();
+    }
+
+    @GetMapping("/{id}")
+    public SharingRequestResponseDto getSharingRequestById(@PathVariable Integer id) {
+        return sharingRequestManagerService.toDto(sharingRequestManagerService.getSharingRequestById(id));
     }
 
     @PostMapping
-    public SharingRequestManager createSharingRequest(@RequestBody SharingRequestCreateRequest request) {
-        SharingRequestManager entity = new SharingRequestManager();
-        entity.setStatus("PENDING");
-        return sharingRequestManagerService.createSharingRequest(entity);
+    public SharingRequestResponseDto createSharingRequest(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody SharingRequestCreateRequest request) {
+
+        String token = extractToken(authHeader);
+        Integer currentUserId = jwtService.extractUserId(token);
+
+        SharingRequestManager created = sharingRequestManagerService.createSharingRequest(
+                request.getDoc_id(),
+                request.getRequester_id(),
+                request.getPermission(),
+                currentUserId);
+
+        return sharingRequestManagerService.toDto(created);
+    }
+
+    @PostMapping("/{id}/approve")
+    public SharingRequestResponseDto approveSharingRequest(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Integer id) {
+
+        String token = extractToken(authHeader);
+        Integer currentUserId = jwtService.extractUserId(token);
+
+        SharingRequestManager approved = sharingRequestManagerService.approveSharingRequest(id, currentUserId);
+        return sharingRequestManagerService.toDto(approved);
+    }
+
+    @PostMapping("/{id}/reject")
+    public SharingRequestResponseDto rejectSharingRequest(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Integer id) {
+
+        String token = extractToken(authHeader);
+        Integer currentUserId = jwtService.extractUserId(token);
+
+        SharingRequestManager rejected = sharingRequestManagerService.rejectSharingRequest(id, currentUserId);
+        return sharingRequestManagerService.toDto(rejected);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
+    }
+
+    private String extractToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("Invalid authorization header");
+        }
+        String token = authHeader.substring(7).trim();
+        if (!jwtService.isTokenValid(token)) {
+            throw new IllegalArgumentException("Invalid or expired token");
+        }
+        return token;
     }
 
     public static class SharingRequestCreateRequest {
         private Integer doc_id;
+        private Integer requester_id;
+        private String permission;
 
         public Integer getDoc_id() {
             return doc_id;
@@ -43,19 +124,21 @@ public class SharingRequestManagerController {
         public void setDoc_id(Integer doc_id) {
             this.doc_id = doc_id;
         }
-    }
 
-    @PostMapping("/{id}/approve")
-    public SharingRequestManager approveSharingRequest(@PathVariable Integer id) {
-        SharingRequestManager request = sharingRequestManagerService.getSharingRequestById(id);
-        request.setStatus("APPROVED");
-        return sharingRequestManagerService.updateSharingRequest(id, request);
-    }
+        public Integer getRequester_id() {
+            return requester_id;
+        }
 
-    @PostMapping("/{id}/reject")
-    public SharingRequestManager rejectSharingRequest(@PathVariable Integer id) {
-        SharingRequestManager request = sharingRequestManagerService.getSharingRequestById(id);
-        request.setStatus("REJECTED");
-        return sharingRequestManagerService.updateSharingRequest(id, request);
+        public void setRequester_id(Integer requester_id) {
+            this.requester_id = requester_id;
+        }
+
+        public String getPermission() {
+            return permission;
+        }
+
+        public void setPermission(String permission) {
+            this.permission = permission;
+        }
     }
 }

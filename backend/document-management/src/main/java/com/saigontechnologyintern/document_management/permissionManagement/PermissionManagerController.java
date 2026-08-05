@@ -14,30 +14,36 @@ public class PermissionManagerController {
     }
 
     @GetMapping
-    public List<PermissionManager> getPermissions(@RequestParam(value = "doc_id", required = false) Integer docId) {
-        if (docId != null) {
-            return permissionManagerService.getPermissionsByDocumentId(docId);
-        }
-        return permissionManagerService.getAllPermissions();
-    }
+    public List<PermissionResponseDto> getPermissions(
+            @RequestParam(value = "doc_id", required = false) Integer docId,
+            @RequestParam(value = "user_id", required = false) Integer userId) {
 
+        List<PermissionManager> data = permissionManagerService.getPermissions(docId, userId);
+        return data.stream().map(permissionManagerService::toDto).toList();
+    }
     @GetMapping("/{id}")
-    public PermissionManager getPermissionById(@PathVariable Integer id) {
-        return permissionManagerService.getPermissionById(id);
+    public PermissionResponseDto getPermissionById(@PathVariable Integer id) {
+        return permissionManagerService.toDto(permissionManagerService.getPermissionById(id));
     }
 
     @PostMapping
-    public PermissionManager createPermission(@RequestBody PermissionCreateRequest request) {
-        PermissionManager permission = new PermissionManager();
-        permission.setAccessType(request.getAccess_type());
-        return permissionManagerService.createPermission(permission);
+    public PermissionResponseDto createPermission(@RequestBody PermissionCreateRequest request) {
+        PermissionManager created = permissionManagerService.createPermission(
+                request.getDoc_id(),
+                request.getUser_id(),
+                request.getAccess_type());
+        return permissionManagerService.toDto(created);
     }
 
     @PatchMapping("/{id}")
-    public PermissionManager updatePermission(@PathVariable Integer id, @RequestBody PermissionUpdateRequest request) {
-        PermissionManager permission = new PermissionManager();
-        permission.setAccessType(request.getAccess_type());
-        return permissionManagerService.updatePermission(id, permission);
+    public PermissionResponseDto updatePermission(@PathVariable Integer id, @RequestBody PermissionUpdateRequest request) {
+        PermissionManager updated = permissionManagerService.updatePermission(id, request.getAccess_type());
+        return permissionManagerService.toDto(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deletePermission(@PathVariable Integer id) {
+        permissionManagerService.deletePermissionById(id);
     }
 
     public static class PermissionCreateRequest {
@@ -80,10 +86,5 @@ public class PermissionManagerController {
         public void setAccess_type(String access_type) {
             this.access_type = access_type;
         }
-    }
-
-    @DeleteMapping("/{id}")
-    public void deletePermission(@PathVariable Integer id) {
-        permissionManagerService.deletePermissionById(id);
     }
 }

@@ -1,0 +1,26 @@
+//Setup environment variable - Dan vega
+https://www.youtube.com/watch?v=rQV76dufxz4&t=395s
+
+//JWT - Decode RebornDev (CodeJava)
+header - payload - signature
+
+
+//Deploy len RDS - AWS EC2 - S3
+https://www.youtube.com/watch?v=YC7NBNICGeY
+
+//Commit Github repository
+
+//AWS Service
+ve` sau can` manage access cho IpV4 (truoc mat' la` pham vi 0.0.0.0 thi` cho global quoc' te'
+nguoi` ta cung~ xai duoc) => chuyen~ qua IpV4 Vietnam , con` chay local thi` xai` Ipv4 cua~ wifi local
+
+//Note
+Can` lam` diagram de~ explain luong` chay cua he thong, cung nhu suport viec explain codebase, user flow, activity cua feature trong app
+
+
+//Note AWS billing for when pausing service
+While your DB instance is stopped,
+you're charged for provisioned storage, including Provisioned IOPS.
+You're also charged for backup storage.
+This includes manual snapshots and automated backups within your retention window
+

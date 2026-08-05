@@ -1,5 +1,6 @@
 package com.saigontechnologyintern.document_management.sharingRequestManagement;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.saigontechnologyintern.document_management.documentManagement.DocumentManage;
 import com.saigontechnologyintern.document_management.userManagement.UserManager;
 import jakarta.persistence.*;
@@ -21,10 +22,27 @@ public class SharingRequestManager {
     @Column(name = "requested_at", nullable = false, updatable = false)
     private LocalDateTime requestedAt;
 
+    public String getPermission() {
+        return permission;
+    }
+
+    public void setPermission(String permission) {
+        this.permission = permission;
+    }
+
+    @Column(name = "permission", nullable = false, length = 20)
+    private String permission;
+
+    // ⭐ MODIFICATION: Added @JsonIgnore to break circular reference
+    // Prevents: SharingRequestManager → document → sharingRequests → document → infinite loop
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doc_id")
     private DocumentManage document;
 
+    // MODIFICATION: Added @JsonIgnore to break circular reference
+    // Prevents: SharingRequestManager → user → sharingRequests → user → infinite loop
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requester_id")
     private UserManager requester;

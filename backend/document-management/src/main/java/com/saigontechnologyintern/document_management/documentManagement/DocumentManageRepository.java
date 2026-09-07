@@ -27,7 +27,6 @@ WHERE d.owner.userId = :userId
       AND (:folderId IS NULL OR d.folder_id = :folderId)
       AND (:q IS NULL OR d.title ILIKE CONCAT('%', :q, '%'))
     """,
-            nativeQuery = true
-    )
+            nativeQuery = true)
     List<DocumentManage> findVisibleDocumentsForUserFiltered(Integer userId, Integer folderId, String q);
 }
